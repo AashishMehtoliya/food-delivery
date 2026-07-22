@@ -57,6 +57,9 @@ public class SecurityConfig {
 						.requestMatchers("/auth/register").permitAll()
 						.requestMatchers(HttpMethod.GET, "/cities/*/restaurants", "/restaurants/*/menu")
 						.permitAll()
+						.requestMatchers(
+								"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**")
+						.permitAll()
 						.anyRequest().authenticated())
 				.httpBasic(basic -> basic.authenticationEntryPoint(authenticationEntryPoint))
 				.exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint));
