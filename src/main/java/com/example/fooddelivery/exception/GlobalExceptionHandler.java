@@ -4,10 +4,13 @@ import com.example.fooddelivery.dto.ErrorResponse;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -63,6 +66,24 @@ public class GlobalExceptionHandler {
 				.map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
 				.collect(Collectors.joining("; "));
 		return build(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", message);
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ErrorResponse> handleMalformedBody(HttpMessageNotReadableException ex) {
+		return build(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST_BODY", "Request body is missing or malformed");
+	}
+
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+		return build(
+				HttpStatus.BAD_REQUEST,
+				"VALIDATION_FAILED",
+				"Invalid value for parameter '" + ex.getName() + "': " + ex.getValue());
+	}
+
+	@ExceptionHandler(MissingServletRequestParameterException.class)
+	public ResponseEntity<ErrorResponse> handleMissingParameter(MissingServletRequestParameterException ex) {
+		return build(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", ex.getMessage());
 	}
 
 	@ExceptionHandler(Exception.class)
