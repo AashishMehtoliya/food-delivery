@@ -107,4 +107,6 @@ and final stock is 0) and `DeliveryAssignmentIntegrationTest` (10 partners racin
 one assignment, asserts exactly 1 wins). Both were run repeatedly during development to rule
 out flakiness, not just once.
 
-See [`SKILLS.md`](SKILLS.md) for the full breakdown of testing practices and tooling used.
+See [`SKILLS.md`](SKILLS.md) for the repeatable, flow-specific skills followed to build and
+verify this project (implementing a build-order step, adding an endpoint, writing a
+concurrency test, resolving a spec gap).
