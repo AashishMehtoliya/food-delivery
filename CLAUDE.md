@@ -1,75 +1,85 @@
 # CLAUDE.md
 
-Project-specific context for Claude Code sessions working in this repo. For the story of
-how this codebase was originally built with AI, see [`AGENTS.md`](AGENTS.md). For the spec
-this implements and the assumptions/deviations made, see
-[`IMPLEMENTATION_SPECS.md`](IMPLEMENTATION_SPECS.md) and [`README.md`](README.md).
+Instructions for Claude Code working in this repository. Read this file in full before
+writing any code, and re-read it if you've been away from this repo for a while.
 
-## Build & run
+## Source of truth
 
-```
-JAVA_HOME=<path to a JDK 17>            # required if the system default JDK isn't 17
-./gradlew bootRun                       # dev profile, H2 file at ./data/fooddelivery
-./gradlew test                          # test profile, H2 file at ./data/fooddelivery-test
-```
+`IMPLEMENTATION_SPEC.md` at the repo root is the design spec. It has already made the
+scoping decisions (tech stack, domain model, state machine, API surface, concurrency
+mechanisms, testing requirements). Read it in full before writing anything. Your job here
+is implementation against that spec, not re-deriving scope — don't second-guess or redesign
+sections of it without flagging why first.
 
-Bootstrap admin (seeded via Flyway `V2__seed_admin_user.sql`):
-`admin@fooddelivery.com` / `admin123`. Swagger UI is at `/swagger-ui.html`
-(springdoc-openapi), whitelisted alongside the two public browse GETs and
-`/auth/register` in `SecurityConfig`.
+## Build order
 
-## Structure
+Follow the build order in the spec's Section 15, one numbered step at a time. Do not skip
+ahead to a later step, and do not batch multiple steps into one pass — work and commit one
+step at a time so the git history reflects the actual build order, not a reconstruction.
 
-Single package root `com.example.fooddelivery`, split by layer:
+## Per-step workflow
 
-```
-config      SecurityConfig, AsyncConfig (dedicated notification thread pool)
-controller  one per resource area
-dto         request/response records, never entities directly on the wire
-entity      JPA entities
-enums       Role, OrderStatus, AssignmentStatus, AvailabilityStatus, PaymentStatus
-event       OrderStatusChangedEvent + the async notification listener/registry
-exception   domain exceptions + GlobalExceptionHandler (@RestControllerAdvice)
-repository  Spring Data JPA interfaces
-security    AppUserPrincipal / AppUserDetailsService
-service     business logic, @Transactional boundaries live here
-```
+For every step in the build order, do these in sequence — do not skip or reorder them:
 
-## Things worth knowing before changing code
+1. Write the entities/repositories/services/controllers needed for that step.
+2. Compile (`./gradlew compileJava`) and fix any compilation errors before moving on.
+3. Boot the app (`./gradlew bootRun`) and manually exercise the new endpoint(s) with
+   `curl` — the happy path, the error cases named in the spec for that flow, and any
+   RBAC/ownership check involved. Do this **before** writing automated tests, so that a
+   failing test later tells you something about the test, not about an undiscovered
+   application bug.
+4. Write the unit and/or integration tests the spec calls for at that step (Section 13).
+5. Run the full test suite (`./gradlew test`), not just the new tests. For anything
+   involving concurrency (the stock-decrement and assignment-acceptance tests), run the
+   suite more than once — a concurrency test that passes once is not proof it passes
+   reliably; re-run it enough times to trust it before moving on.
+6. Commit, with a message that explains what was built and, if a scoping or
+   implementation decision was made, why — write the message to be understood without
+   re-reading the diff.
 
-- **`Order.transitionTo(OrderStatus)` is the only way order status changes.** Every
-  status-changing endpoint calls it rather than setting the field directly, so illegal
-  transitions are rejected the same way everywhere. Don't add a code path that bypasses it.
-- **`OrderService`'s optimistic-lock retry loop uses a `@Lazy`-injected self-reference**
-  (`self.placeOrderInTransaction(...)`) so each retry attempt goes through the Spring proxy
-  and gets a genuinely fresh `@Transactional` boundary. Calling `this.placeOrderInTransaction(...)`
-  directly would silently defeat the retry (no new transaction, no fresh read).
-- **The retry bound is 10, not the spec's illustrative "3"** — see `OrderService`'s comment
-  and the README's "Deviations" section for why (3 attempts starved a legitimate winner
-  under the required 10-thread concurrency test).
-- **The stock decrement and the assignment-accept race use different concurrency
-  mechanisms on purpose**: `MenuItem` stock uses JPA optimistic locking (`@Version` +
-  `saveAndFlush`, retried on conflict); `DeliveryAssignment` acceptance uses a single
-  conditional bulk `UPDATE` (`acceptIfOffered`, row-count-checked, no retry). Don't
-  "normalize" one to match the other without checking Section 9 vs. Section 10 of the spec
-  — they're intentionally different techniques.
-- **Test database is file-based H2, shared across test classes in the same JVM run.**
-  `BaseIntegrationTest.cleanDatabase()` wipes all tables before every test — if you add a
-  new entity, add its repository to that cleanup in FK-safe order (children before
-  parents). If the full suite ever produces confusing 404s/failures that don't reproduce
-  when running a single test class in isolation, check for a stray `bootRun` process still
-  holding the same H2 file — that caused real, non-reproducible-looking failures during
-  development until the process was killed.
-- **`NotificationRegistry` is in-memory and shared across the (often context-cached) test
-  suite** — it's cleared in `BaseIntegrationTest.cleanDatabase()` too. There is deliberately
-  no `Notification` entity/table (Section 6 doesn't define one); see README for why.
+## Concurrency correctness is non-negotiable
 
-## Verifying changes
+Sections 9 and 10 of the spec (atomic order placement, delivery-partner assignment race)
+are the most important part of this assignment. Never implement the "decrement stock" or
+"accept assignment" paths as a read-then-write in application code — always use the
+conditional-update-at-the-database-level pattern the spec specifies, and check the affected
+row count. If you find yourself writing `findById(...)` followed by a Java-side status
+check followed by `save(...)` for either of these two flows, stop — that reintroduces the
+race the spec is asking you to close.
 
-There's no configured linter/formatter (Checkstyle, Spotless, etc.) — "lint" for this repo
-means a clean `./gradlew compileJava compileTestJava` (no warnings) plus a full
-`./gradlew test` pass. For anything touching the two concurrency-critical paths (order
-placement stock decrement, delivery assignment acceptance), re-run the test suite multiple
-times before trusting a green result — both have dedicated multi-threaded tests
-(`OrderPlacementIntegrationTest`, `DeliveryAssignmentIntegrationTest`) that are the actual
-proof the concurrency guarantees hold, not just decoration.
+If empirical testing under the required concurrency test contradicts an illustrative
+number in the spec (e.g. a retry-attempt count), it is fine to adjust the number — but:
+- the actual safety property (no overselling, no double-assignment) must never be
+  loosened to make a test pass
+- record the change and the reasoning in a code comment at the point of the change, and in
+  the README's "Deviations and scoping decisions" section
+
+## Handling gaps in the spec
+
+If you hit something the spec implies but never fully defines (e.g. an endpoint referenced
+by ID with no creation endpoint ever specified), do not silently improvise a large solution
+and do not leave it broken. Resolve it with the narrowest change consistent with the rest
+of the spec, and write it up in the README's "Deviations and scoping decisions" section —
+one entry per gap, stating what was missing and what you did about it.
+
+## Scope discipline
+
+Do not introduce anything the spec's Section 3 lists as out of scope, even if it would be
+"easy" or "more correct" — no message brokers, no Docker, no OAuth provider, no real
+payment/notification integrations, no geo-matching. If you think one of these is genuinely
+needed, say so and stop rather than adding it unprompted.
+
+## Commit hygiene
+
+- One commit per build-order step (or smaller, if a step is large) — never one commit
+  covering multiple steps.
+- Never commit code that doesn't compile or has a failing test in the suite.
+- Do not rewrite or squash history to "clean it up" — the incremental history is itself
+  part of what's being evaluated.
+
+## Do not
+
+- Do not fabricate test results, benchmark numbers, or claims about what was manually
+  verified — only report what was actually run.
+- Do not add dependencies outside Section 2 of the spec without flagging it first.
+- Do not mark a build-order step complete if its tests aren't passing.
