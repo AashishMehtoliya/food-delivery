@@ -42,6 +42,11 @@ public class GlobalExceptionHandler {
 		return build(HttpStatus.PAYMENT_REQUIRED, "PAYMENT_FAILED", ex.getMessage());
 	}
 
+	@ExceptionHandler(AssignmentAlreadyAcceptedException.class)
+	public ResponseEntity<ErrorResponse> handleAssignmentAlreadyAccepted(AssignmentAlreadyAcceptedException ex) {
+		return build(HttpStatus.CONFLICT, "ASSIGNMENT_ALREADY_TAKEN", ex.getMessage());
+	}
+
 	@ExceptionHandler(UnauthorizedActionException.class)
 	public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedActionException ex) {
 		return build(HttpStatus.FORBIDDEN, "UNAUTHORIZED_ACTION", ex.getMessage());

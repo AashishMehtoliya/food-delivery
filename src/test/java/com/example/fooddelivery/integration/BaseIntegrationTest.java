@@ -1,9 +1,11 @@
 package com.example.fooddelivery.integration;
 
 import com.example.fooddelivery.entity.City;
+import com.example.fooddelivery.entity.DeliveryPartner;
 import com.example.fooddelivery.entity.MenuItem;
 import com.example.fooddelivery.entity.Restaurant;
 import com.example.fooddelivery.entity.User;
+import com.example.fooddelivery.enums.AvailabilityStatus;
 import com.example.fooddelivery.enums.Role;
 import com.example.fooddelivery.repository.CityRepository;
 import com.example.fooddelivery.repository.DeliveryAssignmentRepository;
@@ -110,5 +112,12 @@ public abstract class BaseIntegrationTest {
 		item.setStockQuantity(stockQuantity);
 		item.setAvailable(true);
 		return menuItemRepository.save(item);
+	}
+
+	protected DeliveryPartner createDeliveryPartner(User user) {
+		DeliveryPartner partner = new DeliveryPartner();
+		partner.setUser(user);
+		partner.setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
+		return deliveryPartnerRepository.save(partner);
 	}
 }
