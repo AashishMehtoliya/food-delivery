@@ -3,6 +3,7 @@ package com.example.fooddelivery.config;
 import com.example.fooddelivery.security.AppUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -37,6 +38,8 @@ public class SecurityConfig {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/auth/register").permitAll()
+						.requestMatchers(HttpMethod.GET, "/cities/*/restaurants", "/restaurants/*/menu")
+						.permitAll()
 						.anyRequest().authenticated())
 				.httpBasic(basic -> {});
 		return http.build();

@@ -51,4 +51,12 @@ public class RestaurantService {
 	public List<RestaurantResponse> listAll() {
 		return restaurantRepository.findAll().stream().map(RestaurantResponse::from).toList();
 	}
+
+	@Transactional(readOnly = true)
+	public List<RestaurantResponse> listByCity(Long cityId) {
+		if (!cityRepository.existsById(cityId)) {
+			throw new ResourceNotFoundException("City not found: " + cityId);
+		}
+		return restaurantRepository.findByCityId(cityId).stream().map(RestaurantResponse::from).toList();
+	}
 }

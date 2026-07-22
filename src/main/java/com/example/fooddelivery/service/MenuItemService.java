@@ -9,6 +9,7 @@ import com.example.fooddelivery.exception.ResourceNotFoundException;
 import com.example.fooddelivery.exception.UnauthorizedActionException;
 import com.example.fooddelivery.repository.MenuItemRepository;
 import com.example.fooddelivery.repository.RestaurantRepository;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +54,16 @@ public class MenuItemService {
 			item.setAvailable(request.available());
 		}
 		return MenuItemResponse.from(item);
+	}
+
+	@Transactional(readOnly = true)
+	public List<MenuItemResponse> listAvailableMenu(Long restaurantId) {
+		if (!restaurantRepository.existsById(restaurantId)) {
+			throw new ResourceNotFoundException("Restaurant not found: " + restaurantId);
+		}
+		return menuItemRepository.findByRestaurantIdAndAvailableTrue(restaurantId).stream()
+				.map(MenuItemResponse::from)
+				.toList();
 	}
 
 	private Restaurant findOwnedRestaurant(Long restaurantId, Long ownerId) {
