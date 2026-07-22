@@ -1,7 +1,7 @@
 ---
 name: add-resource-endpoint
 description: Add a new REST endpoint (create/list/action) for an existing or new domain
-  resource. Use this whenever a build-order step calls for a new API surface, e.g. a new
+  resource. Use this whenever a feature increment calls for a new API surface, e.g. a new
   controller method or a new controller entirely.
 ---
 
@@ -18,4 +18,5 @@ description: Add a new REST endpoint (create/list/action) for an existing or new
    new exception class if the failure is genuinely a new category, and wire it into
    `GlobalExceptionHandler` immediately.
 6. Manually verify with `curl` before writing the automated test (see the
-   `build-order-step` skill).
+   `implement-feature-increment` skill), then run `pre-commit-verification` before
+   committing.
