@@ -10,10 +10,10 @@ internalized workflow and written up afterward, in skill format, for the submiss
 
 - **[`implement-feature-increment`](.claude/skills/implement-feature-increment/SKILL.md)**
   — implement one bounded increment of a feature end to end: write code, compile, manually
-  verify, write the required tests, run `pre-commit-verification`, commit. Originally
-  scoped to "one numbered step from `IMPLEMENTATION_SPECS.md` Section 15"; generalized once
-  that build order was fully implemented, since the numbered-step framing had no further
-  use once there were no steps left to work through.
+  verify, write the required tests, run the full suite, commit. Originally scoped to "one
+  numbered step from `IMPLEMENTATION_SPECS.md` Section 15"; generalized once that build
+  order was fully implemented, since the numbered-step framing had no further use once
+  there were no steps left to work through.
 - **[`add-resource-endpoint`](.claude/skills/add-resource-endpoint/SKILL.md)** — add a new
   REST endpoint: DTO -> service -> controller with the right `@PreAuthorize` -> security
   whitelist if public -> exception mapping.
@@ -22,9 +22,6 @@ internalized workflow and written up afterward, in skill format, for the submiss
   for the two required concurrency tests (Sections 9 and 10).
 - **[`resolve-spec-gap`](.claude/skills/resolve-spec-gap/SKILL.md)** — handle something the
   spec implies but never fully defines, without silently improvising or leaving it broken.
-- **[`pre-commit-verification`](.claude/skills/pre-commit-verification/SKILL.md)** — before
-  every commit, run the full suite and fix real failures; never touch the assertions in
-  either concurrency-safety test to force a pass.
 
 These are process skills — how to build correctly and verifiably against this spec — not
 domain-specific recipes like "how to place an order," since the spec itself already

@@ -17,6 +17,5 @@ description: Add a new REST endpoint (create/list/action) for an existing or new
 5. Map every new failure path to an existing domain exception where one fits; only add a
    new exception class if the failure is genuinely a new category, and wire it into
    `GlobalExceptionHandler` immediately.
-6. Manually verify with `curl` before writing the automated test (see the
-   `implement-feature-increment` skill), then run `pre-commit-verification` before
-   committing.
+6. Manually verify with `curl` before writing the automated test, then run the full test
+   suite before committing (see the `implement-feature-increment` skill).

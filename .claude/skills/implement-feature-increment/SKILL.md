@@ -15,6 +15,9 @@ description: Implement one bounded increment of a feature end to end - from code
    before writing automated tests, so a later test failure points at the test, not an
    undiscovered application bug.
 5. Write the unit and/or integration tests this increment calls for.
-6. Run the `pre-commit-verification` skill before committing.
+6. Run the full test suite (`./gradlew test`) before committing. If anything fails, fix the
+   root cause - the application code or the test, whichever is actually wrong. Never modify
+   the assertions in either concurrency-safety test to force a pass; fix the implementation
+   or stop and report to the user instead.
 7. Commit, with a message explaining what was built and, if a scoping or implementation
    decision was made, why.
