@@ -32,6 +32,16 @@ public class GlobalExceptionHandler {
 		return build(HttpStatus.CONFLICT, "INVALID_STATE_TRANSITION", ex.getMessage());
 	}
 
+	@ExceptionHandler(InsufficientStockException.class)
+	public ResponseEntity<ErrorResponse> handleInsufficientStock(InsufficientStockException ex) {
+		return build(HttpStatus.CONFLICT, "INSUFFICIENT_STOCK", ex.getMessage());
+	}
+
+	@ExceptionHandler(PaymentFailedException.class)
+	public ResponseEntity<ErrorResponse> handlePaymentFailed(PaymentFailedException ex) {
+		return build(HttpStatus.PAYMENT_REQUIRED, "PAYMENT_FAILED", ex.getMessage());
+	}
+
 	@ExceptionHandler(UnauthorizedActionException.class)
 	public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedActionException ex) {
 		return build(HttpStatus.FORBIDDEN, "UNAUTHORIZED_ACTION", ex.getMessage());
