@@ -7,6 +7,7 @@ import com.example.fooddelivery.entity.Restaurant;
 import com.example.fooddelivery.entity.User;
 import com.example.fooddelivery.enums.AvailabilityStatus;
 import com.example.fooddelivery.enums.Role;
+import com.example.fooddelivery.event.NotificationRegistry;
 import com.example.fooddelivery.repository.CityRepository;
 import com.example.fooddelivery.repository.DeliveryAssignmentRepository;
 import com.example.fooddelivery.repository.DeliveryPartnerRepository;
@@ -65,10 +66,14 @@ public abstract class BaseIntegrationTest {
 	@Autowired
 	protected PasswordEncoder passwordEncoder;
 
+	@Autowired
+	protected NotificationRegistry notificationRegistry;
+
 	// The datasource is file-based H2 (Section 2), so data survives across test runs;
 	// each test starts from a clean slate to avoid unique-constraint collisions.
 	@BeforeEach
 	void cleanDatabase() {
+		notificationRegistry.clear();
 		ratingRepository.deleteAll();
 		deliveryAssignmentRepository.deleteAll();
 		paymentRepository.deleteAll();
