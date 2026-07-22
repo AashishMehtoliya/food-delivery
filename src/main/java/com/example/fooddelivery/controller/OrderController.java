@@ -4,6 +4,7 @@ import com.example.fooddelivery.dto.OrderRequest;
 import com.example.fooddelivery.dto.OrderResponse;
 import com.example.fooddelivery.security.AppUserPrincipal;
 import com.example.fooddelivery.service.OrderService;
+import com.example.fooddelivery.service.RestaurantOrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
 
 	private final OrderService orderService;
+	private final RestaurantOrderService restaurantOrderService;
 
-	public OrderController(OrderService orderService) {
+	public OrderController(OrderService orderService, RestaurantOrderService restaurantOrderService) {
 		this.orderService = orderService;
+		this.restaurantOrderService = restaurantOrderService;
 	}
 
 	@PostMapping
@@ -37,5 +40,23 @@ public class OrderController {
 	@PreAuthorize("hasRole('CUSTOMER')")
 	public OrderResponse getOrder(@PathVariable Long id, @AuthenticationPrincipal AppUserPrincipal principal) {
 		return orderService.getOrder(id, principal.getId());
+	}
+
+	@PostMapping("/{id}/cancel")
+	@PreAuthorize("hasRole('CUSTOMER')")
+	public OrderResponse cancel(@PathVariable Long id, @AuthenticationPrincipal AppUserPrincipal principal) {
+		return orderService.cancel(id, principal.getId());
+	}
+
+	@PostMapping("/{id}/accept")
+	@PreAuthorize("hasRole('RESTAURANT_OWNER')")
+	public OrderResponse accept(@PathVariable Long id, @AuthenticationPrincipal AppUserPrincipal principal) {
+		return restaurantOrderService.accept(id, principal.getId());
+	}
+
+	@PostMapping("/{id}/reject")
+	@PreAuthorize("hasRole('RESTAURANT_OWNER')")
+	public OrderResponse reject(@PathVariable Long id, @AuthenticationPrincipal AppUserPrincipal principal) {
+		return restaurantOrderService.reject(id, principal.getId());
 	}
 }

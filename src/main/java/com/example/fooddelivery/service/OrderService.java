@@ -170,7 +170,27 @@ public class OrderService {
 		if (!order.getCustomer().getId().equals(customerId)) {
 			throw new UnauthorizedActionException("You do not own this order");
 		}
-		List<OrderItemResponse> items = orderItemRepository.findByOrderId(orderId).stream()
+		return toResponse(order);
+	}
+
+	@Transactional
+	public OrderResponse cancel(Long orderId, Long customerId) {
+		Order order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+		if (!order.getCustomer().getId().equals(customerId)) {
+			throw new UnauthorizedActionException("You do not own this order");
+		}
+		OrderStatus oldStatus = order.getStatus();
+		order.transitionTo(OrderStatus.CANCELLED);
+		// Payment was already captured at placement time, so cancellation (like restaurant
+		// rejection) triggers the same mocked refund path.
+		paymentService.refund(order.getTotalAmount());
+		eventPublisher.publishEvent(new OrderStatusChangedEvent(order.getId(), oldStatus, OrderStatus.CANCELLED));
+		return toResponse(order);
+	}
+
+	private OrderResponse toResponse(Order order) {
+		List<OrderItemResponse> items = orderItemRepository.findByOrderId(order.getId()).stream()
 				.map(OrderItemResponse::from)
 				.toList();
 		return OrderResponse.from(order, items);
