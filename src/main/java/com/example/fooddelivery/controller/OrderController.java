@@ -3,9 +3,12 @@ package com.example.fooddelivery.controller;
 import com.example.fooddelivery.dto.OrderRequest;
 import com.example.fooddelivery.dto.OrderResponse;
 import com.example.fooddelivery.dto.OrderStatusUpdateRequest;
+import com.example.fooddelivery.dto.RatingRequest;
+import com.example.fooddelivery.dto.RatingResponse;
 import com.example.fooddelivery.security.AppUserPrincipal;
 import com.example.fooddelivery.service.DeliveryOrderService;
 import com.example.fooddelivery.service.OrderService;
+import com.example.fooddelivery.service.RatingService;
 import com.example.fooddelivery.service.RestaurantOrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -27,14 +30,17 @@ public class OrderController {
 	private final OrderService orderService;
 	private final RestaurantOrderService restaurantOrderService;
 	private final DeliveryOrderService deliveryOrderService;
+	private final RatingService ratingService;
 
 	public OrderController(
 			OrderService orderService,
 			RestaurantOrderService restaurantOrderService,
-			DeliveryOrderService deliveryOrderService) {
+			DeliveryOrderService deliveryOrderService,
+			RatingService ratingService) {
 		this.orderService = orderService;
 		this.restaurantOrderService = restaurantOrderService;
 		this.deliveryOrderService = deliveryOrderService;
+		this.ratingService = ratingService;
 	}
 
 	@PostMapping
@@ -75,5 +81,14 @@ public class OrderController {
 			@Valid @RequestBody OrderStatusUpdateRequest request,
 			@AuthenticationPrincipal AppUserPrincipal principal) {
 		return deliveryOrderService.updateStatus(id, request.status(), principal.getId());
+	}
+
+	@PostMapping("/{id}/rating")
+	@PreAuthorize("hasRole('CUSTOMER')")
+	public ResponseEntity<RatingResponse> rate(
+			@PathVariable Long id,
+			@Valid @RequestBody RatingRequest request,
+			@AuthenticationPrincipal AppUserPrincipal principal) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(ratingService.rate(id, request, principal.getId()));
 	}
 }
