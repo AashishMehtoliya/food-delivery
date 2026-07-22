@@ -60,9 +60,13 @@ public class SecurityConfig {
 						.requestMatchers(
 								"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**")
 						.permitAll()
+						.requestMatchers("/h2-console/**").permitAll()
 						.anyRequest().authenticated())
 				.httpBasic(basic -> basic.authenticationEntryPoint(authenticationEntryPoint))
-				.exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint));
+				.exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint))
+				// H2 console renders itself inside a frame; Spring Security's default
+				// X-Frame-Options: DENY blocks that, so relax it to same-origin just for this.
+				.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 		return http.build();
 	}
 }
